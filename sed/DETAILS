@@ -1,0 +1,18 @@
+          MODULE=sed
+         VERSION=4.10
+          SOURCE=$MODULE-$VERSION.tar.xz
+   SOURCE_URL[0]=$GNU_URL/$MODULE
+   SOURCE_URL[1]=ftp://ftp.gnu.org/pub/gnu/$MODULE/
+      SOURCE_VFY=sha256:b8e72182b2ec96a3574e2998c47b7aaa64cc20ce000d8e9ac313cc07cecf28c7
+        WEB_SITE=http://www.gnu.org/software/sed/
+         ENTERED=20010922
+         UPDATED=20260424
+           SHORT="A stream-oriented non-interactive text editor"
+
+cat << EOF
+sed - A stream-oriented non-interactive text editor.
+Takes text input, performs some operation (or set of operations) on it and
+outputs the modified text. Sed is typically used for extracting part of a file
+using pattern matching or substituting multiple occurences of a string within a
+file.
+EOF
