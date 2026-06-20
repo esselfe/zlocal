@@ -17,6 +17,7 @@ fi &&
              --disable-werror \
              --disable-readline \
              --disable-sim \
+             --disable-gprofng \
              --enable-cet \
              --enable-relro \
              --enable-plugins \
@@ -38,14 +39,12 @@ rm $dstdir/usr/share/man/man1/{dlltool,windres,windmc}* &&
 # No shared linking to these files outside binutils
 rm $dstdir/usr/lib/lib{bfd,opcodes}.so &&
 echo "INPUT ( /usr/lib/libbfd.a -liberty -lz -ldl )" > $dstdir/usr/lib/libbfd.so &&
-echo "INPUT ( /usr/lib/libopcodes.a -lbfd )" > $dstdir/usr/lib/libopcodes.so
+echo "INPUT ( /usr/lib/libopcodes.a -lbfd )" > $dstdir/usr/lib/libopcodes.so &&
 
-# Merge lib64 into lib if lib64 is a real directory (not a symlink)
+# This part fails on i686, so check the arch
 if [[ "$(uname -m)" == "x86_64" || "$(uname -m)" == "aarch64" ]]; then
-  if [ -d "$dstdir/usr/lib64" ] && [ ! -L "$dstdir/usr/lib64" ]; then
-    mv $dstdir/usr/lib64/* $dstdir/usr/lib/ &&
-    rmdir $dstdir/usr/lib64
-  fi
+	mv $dstdir/usr/lib64/* $dstdir/usr/lib/ &&
+	rmdir $dstdir/usr/lib64
 fi &&
 
 prepare_install &&
