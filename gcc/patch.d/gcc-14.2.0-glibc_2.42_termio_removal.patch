@@ -1,0 +1,110 @@
+Date: 2025-10-06 02:10:00 +0000
+Author: Stephane Fontaine <esselfe16@gmail.com>
+
+Get rid of the 'struct termio' code as glibc is doing.
+
+See https://lists.gnu.org/archive/html/info-gnu/2025-07/msg00011.html for glibc 2.42.
+
+diff -ur a/config/tcl.m4 b/config/tcl.m4
+--- a/config/tcl.m4	2024-08-01 04:17:13.000000000 -0400
++++ b/config/tcl.m4	2025-10-05 22:06:17.084652840 -0400
+@@ -2210,14 +2210,13 @@
+ #	Defines only one of the following vars:
+ #		HAVE_SYS_MODEM_H
+ #		USE_TERMIOS
+-#		USE_TERMIO
+ #		USE_SGTTY
+ #
+ #--------------------------------------------------------------------
+ 
+ AC_DEFUN([SC_SERIAL_PORT], [
+     AC_CHECK_HEADERS(sys/modem.h)
+-    AC_CACHE_CHECK([termios vs. termio vs. sgtty], tcl_cv_api_serial, [
++    AC_CACHE_CHECK([termios vs. sgtty], tcl_cv_api_serial, [
+     AC_TRY_RUN([
+ #include <termios.h>
+ 
+@@ -2232,19 +2231,6 @@
+ }], tcl_cv_api_serial=termios, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
+     if test $tcl_cv_api_serial = no ; then
+ 	AC_TRY_RUN([
+-#include <termio.h>
+-
+-int main() {
+-    struct termio t;
+-    if (ioctl(0, TCGETA, &t) == 0) {
+-	t.c_cflag |= CBAUD | PARENB | PARODD | CSIZE | CSTOPB;
+-	return 0;
+-    }
+-    return 1;
+-}], tcl_cv_api_serial=termio, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
+-    fi
+-    if test $tcl_cv_api_serial = no ; then
+-	AC_TRY_RUN([
+ #include <sgtty.h>
+ 
+ int main() {
+@@ -2275,21 +2261,6 @@
+     fi
+     if test $tcl_cv_api_serial = no; then
+ 	AC_TRY_RUN([
+-#include <termio.h>
+-#include <errno.h>
+-
+-int main() {
+-    struct termio t;
+-    if (ioctl(0, TCGETA, &t) == 0
+-	|| errno == ENOTTY || errno == ENXIO || errno == EINVAL) {
+-	t.c_cflag |= CBAUD | PARENB | PARODD | CSIZE | CSTOPB;
+-	return 0;
+-    }
+-    return 1;
+-    }], tcl_cv_api_serial=termio, tcl_cv_api_serial=no, tcl_cv_api_serial=no)
+-    fi
+-    if test $tcl_cv_api_serial = no; then
+-	AC_TRY_RUN([
+ #include <sgtty.h>
+ #include <errno.h>
+ 
+@@ -2306,7 +2277,6 @@
+     fi])
+     case $tcl_cv_api_serial in
+ 	termios) AC_DEFINE(USE_TERMIOS);;
+-	termio)  AC_DEFINE(USE_TERMIO);;
+ 	sgtty)   AC_DEFINE(USE_SGTTY);;
+     esac
+ ])
+diff -ur a/libphobos/libdruntime/core/sys/posix/sys/ioctl.d b/libphobos/libdruntime/core/sys/posix/sys/ioctl.d
+--- a/libphobos/libdruntime/core/sys/posix/sys/ioctl.d	2024-08-01 04:17:18.000000000 -0400
++++ b/libphobos/libdruntime/core/sys/posix/sys/ioctl.d	2025-10-05 22:01:10.401034396 -0400
+@@ -131,7 +131,7 @@
+ 
+     enum NCC = 8;
+ 
+-    struct termio
++    /* struct termio
+     {
+         ushort c_iflag;
+         ushort c_oflag;
+@@ -139,7 +139,7 @@
+         ushort c_lflag;
+         ubyte c_line;
+         ubyte[NCC] c_cc;
+-    }
++    } */
+ 
+     enum TIOCM_LE = 0x001;
+     enum TIOCM_DTR = 0x002;
+diff -ur a/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp b/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp
+--- a/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp	2024-08-01 04:17:18.000000000 -0400
++++ b/libsanitizer/sanitizer_common/sanitizer_platform_limits_posix.cpp	2025-10-05 22:02:08.211038707 -0400
+@@ -479,9 +479,6 @@
+   unsigned struct_input_id_sz = sizeof(struct input_id);
+   unsigned struct_mtpos_sz = sizeof(struct mtpos);
+   unsigned struct_rtentry_sz = sizeof(struct rtentry);
+-#if SANITIZER_GLIBC || SANITIZER_ANDROID
+-  unsigned struct_termio_sz = sizeof(struct termio);
+-#endif
+   unsigned struct_vt_consize_sz = sizeof(struct vt_consize);
+   unsigned struct_vt_sizes_sz = sizeof(struct vt_sizes);
+   unsigned struct_vt_stat_sz = sizeof(struct vt_stat);
